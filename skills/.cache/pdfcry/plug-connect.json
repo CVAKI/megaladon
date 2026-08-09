@@ -1,0 +1,30 @@
+{
+  "name": "pdfcry",
+  "version": "1.0.0",
+  "description": "Extract and read text content from PDF files. Supports full text dump, metadata inspection, page count, and piping content into the AI pipeline.",
+  "id": "pdfcry-gf7p0t2",
+  "author": "CVAKI",
+  "lang": [
+    "js"
+  ],
+  "commands": [
+    {
+      "trigger": "/pdfcry",
+      "brief": "Extract and print all readable text from a PDF file",
+      "usage": "/pdfcry <filepath>",
+      "description": "Opens the PDF at <filepath> and extracts all readable text content page by page."
+    },
+    {
+      "trigger": "/pdfcry-info",
+      "brief": "Show PDF metadata: title, author, page count, creation date",
+      "usage": "/pdfcry-info <filepath>",
+      "description": "Reads and displays the metadata block of the PDF without extracting full text."
+    },
+    {
+      "trigger": "/pdfcry-ask",
+      "brief": "Extract PDF text and send it directly to the AI model for analysis",
+      "usage": "/pdfcry-ask <filepath> <question>",
+      "description": "Extracts PDF content and appends your question, then forwards both to whyWhale's active AI model."
+    }
+  ]
+}

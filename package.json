@@ -1,0 +1,29 @@
+{
+  "name": "megaladon",
+  "version": "4.0.0",
+  "description": "🦈 Megaladon — AI-powered terminal assistant with self-testing brain, persistent memory, skills, and shell passthrough",
+  "main": "bin/meg.js",
+  "bin": {
+    "megaladon": "./bin/meg.js",
+    "m": "./bin/meg.js"
+  },
+  "scripts": {
+    "start": "node bin/meg.js"
+  },
+  "keywords": [
+    "ai",
+    "terminal",
+    "cli",
+    "claude",
+    "anthropic",
+    "assistant",
+    "code",
+    "shark"
+  ],
+  "author": "CVKI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {}
+}

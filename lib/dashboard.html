@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🦈 Megaladon Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<style>
+  :root{--bg:#0a0f14;--surface:#111820;--card:#161e28;--border:#1e2d3d;--whale:#2979ff;--coral:#ff6b2b;--kelp:#3fc85a;--reef:#ffcc00;--danger:#f85149;--violet:#b96eff;--teal:#3cdcc8;--text:#c9d1d9;--muted:#586069;--white:#e6edf3}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+  header h1{font-size:18px;font-weight:700;color:var(--whale);letter-spacing:.5px}
+  header .badge{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--muted)}
+  header .status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--kelp)}
+  header .dot{width:7px;height:7px;border-radius:50%;background:var(--kelp);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .layout{display:flex;flex:1;min-height:0}
+  nav{width:200px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0}
+  nav a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--muted);text-decoration:none;font-size:13px;cursor:pointer;transition:.15s;border-left:3px solid transparent}
+  nav a:hover{color:var(--text);background:var(--card)}
+  nav a.active{color:var(--whale);border-left-color:var(--whale);background:var(--card)}
+  nav .section{padding:18px 20px 6px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+  main{flex:1;padding:24px;overflow-y:auto}
+  .panel{display:none}.panel.active{display:block}
+  h2{font-size:16px;font-weight:600;color:var(--white);margin-bottom:16px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:16px}
+  .card h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px}
+  .row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .row:last-child{border-bottom:none}
+  .label{font-size:12px;color:var(--muted);width:120px;flex-shrink:0}
+  .value{font-size:13px;color:var(--text);flex:1;word-break:break-all}
+  .value.whale{color:var(--whale)}.value.kelp{color:var(--kelp)}.value.coral{color:var(--coral)}.value.violet{color:var(--violet)}
+  input,select{background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:var(--text);font-size:13px;outline:none;width:100%}
+  input:focus,select:focus{border-color:var(--whale)}
+  .btn{padding:7px 16px;border-radius:5px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:.15s;letter-spacing:.3px}
+  .btn-whale{background:var(--whale);color:#000}.btn-whale:hover{opacity:.85}
+  .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{opacity:.85}
+  .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--whale);color:var(--whale)}
+  .fact-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+  .fact-key{color:var(--violet);font-size:12px;width:180px;flex-shrink:0;font-weight:600;padding-top:1px}
+  .fact-val{color:var(--text);font-size:13px;flex:1}
+  .fact-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}.fact-del:hover{color:var(--danger)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 20px}
+  .stat-val{font-size:28px;font-weight:700;color:var(--whale);margin-bottom:4px}
+  .stat-label{font-size:12px;color:var(--muted)}
+  .empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+  .add-fact{display:flex;gap:8px;margin-top:14px}
+  .add-fact input{flex:1}
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--kelp);color:#000;padding:10px 18px;border-radius:6px;font-size:13px;font-weight:600;opacity:0;transition:.3s;pointer-events:none}
+  .toast.show{opacity:1}
+
+  /* ── Chat Bubbles ─────────────────────────────────────────────────────── */
+  .chat-wrap{display:flex;flex-direction:column;gap:18px;padding:20px 16px}
+  .bubble-row{display:flex;align-items:flex-end;gap:10px}
+  .bubble-row.user{flex-direction:row-reverse}
+  .avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;letter-spacing:-.5px}
+  .avatar-user{background:linear-gradient(135deg,#2979ff22,#2979ff44);border:1px solid var(--whale);color:var(--whale)}
+  .avatar-ai{background:linear-gradient(135deg,#b96eff22,#b96eff44);border:1px solid var(--violet);color:var(--violet)}
+  .bubble{max-width:72%;padding:12px 16px;border-radius:16px;font-size:13.5px;line-height:1.65;position:relative;word-break:break-word}
+  .bubble-user{background:linear-gradient(135deg,#0d2233,#0a1a2b);border:1px solid #1e3a52;border-bottom-right-radius:4px;color:var(--text)}
+  .bubble-ai{background:linear-gradient(135deg,#1a1228,#140e20);border:1px solid #2d1e42;border-bottom-left-radius:4px;color:var(--text)}
+  .bubble-meta{font-size:10px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:6px}
+  .bubble-row.user .bubble-meta{justify-content:flex-end}
+  .bubble-name{font-weight:700;font-size:11px;margin-bottom:5px}
+  .name-user{color:var(--whale)}.name-ai{color:var(--violet)}
+
+  /* Markdown inside bubbles */
+  .bubble-md h1,.bubble-md h2,.bubble-md h3{color:var(--white);margin:10px 0 6px;font-size:14px}
+  .bubble-md h1{font-size:16px;border-bottom:1px solid var(--border);padding-bottom:4px}
+  .bubble-md p{margin-bottom:8px}.bubble-md p:last-child{margin-bottom:0}
+  .bubble-md ul,.bubble-md ol{padding-left:20px;margin-bottom:8px}
+  .bubble-md li{margin-bottom:3px}
+  .bubble-md code{background:#0d1117;border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:'Consolas','Cascadia Code',monospace;font-size:12px;color:var(--coral)}
+  .bubble-md pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;overflow-x:auto;margin:8px 0}
+  .bubble-md pre code{background:none;border:none;padding:12px 14px;display:block;font-size:12px;color:var(--text);line-height:1.55}
+  .bubble-md blockquote{border-left:3px solid var(--whale);padding-left:12px;color:var(--muted);margin:6px 0}
+  .bubble-md strong{color:var(--white);font-weight:600}
+  .bubble-md em{color:var(--reef)}
+  .bubble-md a{color:var(--teal);text-decoration:none}.bubble-md a:hover{text-decoration:underline}
+  .bubble-md table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+  .bubble-md th{background:#0d1117;color:var(--whale);padding:6px 10px;border:1px solid var(--border);text-align:left}
+  .bubble-md td{padding:5px 10px;border:1px solid var(--border)}
+  .bubble-md hr{border:none;border-top:1px solid var(--border);margin:10px 0}
+
+  /* Copy button on code blocks */
+  .code-block-wrap{position:relative}
+  .copy-btn{position:absolute;top:6px;right:8px;background:#1e2d3d;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;transition:.15s}
+  .copy-btn:hover{color:var(--whale);border-color:var(--whale)}
+
+  /* Chat panel toolbar */
+  .chat-toolbar{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+  .chat-toolbar h3{margin:0;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+  .chat-count{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1px 8px;font-size:11px;color:var(--muted)}
+
+  @media(max-width:700px){.grid2{grid-template-columns:1fr}nav{width:160px}.bubble{max-width:90%}}
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:22px">🦈</span>
+  <h1>Megaladon Dashboard</h1>
+  <span class="badge" id="vbadge">v4.0.0</span>
+  <div class="status"><span class="dot"></span><span id="statusTxt">Connected</span></div>
+</header>
+<div class="layout">
+<nav>
+  <div class="section">Overview</div>
+  <a class="active" onclick="show('overview')" id="nav-overview">📊 Overview</a>
+  <div class="section">Settings</div>
+  <a onclick="show('config')" id="nav-config">⚙️ Config</a>
+  <a onclick="show('model')" id="nav-model">🤖 Model</a>
+  <div class="section">Data</div>
+  <a onclick="show('memory')" id="nav-memory">💾 Memory</a>
+  <a onclick="show('session')" id="nav-session">💬 Session</a>
+  <div class="section">Info</div>
+  <a onclick="show('system')" id="nav-system">🖥️ System</a>
+</nav>
+<main>
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <h2>Overview</h2>
+  <div class="grid2" id="stats-grid">
+    <div class="stat"><div class="stat-val" id="s-msgs">—</div><div class="stat-label">Messages this session</div></div>
+    <div class="stat"><div class="stat-val" id="s-facts">—</div><div class="stat-label">Memory facts stored</div></div>
+    <div class="stat"><div class="stat-val" id="s-mode">—</div><div class="stat-label">Current mode</div></div>
+    <div class="stat"><div class="stat-val" id="s-model" style="font-size:14px;padding-top:8px">—</div><div class="stat-label">Active model</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>Recent Memory</h3>
+    <div id="recent-mem"><div class="empty">No memory yet</div></div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="panel" id="panel-config">
+  <h2>Configuration</h2>
+  <div class="card">
+    <h3>Provider & API</h3>
+    <div class="row"><span class="label">Provider</span>
+      <select id="cfg-provider" style="max-width:200px">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openrouter">OpenRouter</option>
+        <option value="groq">Groq</option>
+        <option value="ollama">Ollama (Local)</option>
+      </select>
+    </div>
+    <div class="row"><span class="label">API Key</span>
+      <input id="cfg-apikey" type="password" placeholder="Enter API key..." style="max-width:340px">
+      <button class="btn btn-ghost" style="margin-left:6px" onclick="toggleKey()">👁</button>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn btn-whale" onclick="saveConfig()">Save Config</button>
+      <button class="btn btn-ghost" onclick="loadAll()">Refresh</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Behaviour</h3>
+    <div class="row"><span class="label">Auto-test code</span><span class="value kelp" id="cfg-autotest">—</span></div>
+    <div class="row"><span class="label">Auto-scan folder</span><span class="value kelp" id="cfg-autoscan">—</span></div>
+    <div class="row"><span class="label">Current mode</span><span class="value whale" id="cfg-mode">—</span></div>
+    <div style="margin-top:8px;font-size:12px;color:var(--muted)">Change these inside the terminal with /autotest, /autoscan, /mode</div>
+  </div>
+</div>
+
+<!-- MODEL -->
+<div class="panel" id="panel-model">
+  <h2>Model</h2>
+  <div class="card">
+    <h3>Active Model</h3>
+    <div class="row"><span class="label">Model</span><span class="value whale" id="m-model">—</span></div>
+    <div class="row"><span class="label">Provider</span><span class="value" id="m-provider">—</span></div>
+  </div>
+  <div class="card">
+    <h3>Available Models (Anthropic)</h3>
+    <div class="row"><span class="label">Sonnet 4</span><span class="value">claude-sonnet-4-20250514 · Best balance</span></div>
+    <div class="row"><span class="label">Opus 4</span><span class="value">claude-opus-4-20250514 · Most capable</span></div>
+    <div class="row"><span class="label">Haiku 4.5</span><span class="value">claude-haiku-4-5-20251001 · Fastest</span></div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">Switch model inside the terminal with /model</div>
+  </div>
+</div>
+
+<!-- MEMORY -->
+<div class="panel" id="panel-memory">
+  <h2>Persistent Memory</h2>
+  <div class="card">
+    <h3>Stored Facts</h3>
+    <div id="mem-list"><div class="empty">No memory stored yet</div></div>
+    <div class="add-fact">
+      <input id="new-key" placeholder="key" style="max-width:160px">
+      <input id="new-val" placeholder="value">
+      <button class="btn btn-whale" onclick="addFact()">Add</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Session Summaries</h3>
+    <div id="session-sums"><div class="empty">No past sessions</div></div>
+    <div style="margin-top:12px">
+      <button class="btn btn-danger" onclick="clearMemory()">Clear All Memory</button>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION — Chat Bubbles -->
+<div class="panel" id="panel-session">
+  <h2>Conversation</h2>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="chat-toolbar">
+      <h3>Messages</h3>
+      <span class="chat-count" id="chat-count">0 messages</span>
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:11px" onclick="loadAll()">↻ Refresh</button>
+    </div>
+    <div id="msg-list" style="max-height:680px;overflow-y:auto">
+      <div class="empty" style="padding:60px 0">No messages yet — start chatting in the terminal</div>
+    </div>
+  </div>
+</div>
+
+<!-- SYSTEM -->
+<div class="panel" id="panel-system">
+  <h2>System Info</h2>
+  <div class="card">
+    <h3>Runtime</h3>
+    <div id="sys-info"><div class="empty">Loading...</div></div>
+  </div>
+  <div class="card">
+    <h3>Data Paths</h3>
+    <div id="sys-paths"></div>
+  </div>
+</div>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+// ── Marked + hljs setup ──────────────────────────────────────────────────────
+marked.setOptions({
+  highlight:(code,lang)=>{
+    if(lang&&hljs.getLanguage(lang)){
+      try{return hljs.highlight(code,{language:lang}).value;}catch(_){}
+    }
+    return hljs.highlightAuto(code).value;
+  },
+  breaks:true,
+  gfm:true,
+});
+
+// Render markdown string to safe HTML, then add copy buttons to code blocks
+function renderMD(raw){
+  const html = marked.parse(raw||'');
+  // Wrap pre>code in a relative div and inject copy btn
+  return html.replace(/<pre><code([^>]*)>([\s\S]*?)<\/code><\/pre>/g,(m,attrs,code)=>{
+    const id='cb'+Math.random().toString(36).slice(2,7);
+    return `<div class="code-block-wrap"><pre><code${attrs} id="${id}">${code}</code></pre><button class="copy-btn" onclick="copyCode('${id}')">copy</button></div>`;
+  });
+}
+function copyCode(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  navigator.clipboard.writeText(el.innerText).then(()=>toast('Copied!'));
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+let data={};
+function show(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('nav-'+id).classList.add('active');
+}
+function toast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=ok?'var(--kelp)':'var(--danger)';
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);
+}
+function toggleKey(){
+  const inp=document.getElementById('cfg-apikey');
+  inp.type=inp.type==='password'?'text':'password';
+}
+async function api(p,method='GET',body){
+  try{const r=await fetch(p,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return r.json();}
+  catch{return null;}
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Build one chat bubble ────────────────────────────────────────────────────
+function makeBubble(m, idx){
+  const isUser = m.role==='user';
+  const avatarLetter = isUser ? 'U' : '🦈';
+  const rowClass  = isUser ? 'bubble-row user'  : 'bubble-row ai';
+  const bubClass  = isUser ? 'bubble bubble-user': 'bubble bubble-ai';
+  const avatarCls = isUser ? 'avatar avatar-user': 'avatar avatar-ai';
+  const nameClass = isUser ? 'name-user'          : 'name-ai';
+  const name      = isUser ? 'You' : 'Megaladon';
+  const content   = isUser
+    ? `<div class="bubble-md">${esc(m.content).replace(/\n/g,'<br>')}</div>`
+    : `<div class="bubble-md">${renderMD(m.content)}</div>`;
+
+  return `
+  <div class="${rowClass}">
+    <div class="${avatarCls}">${isUser?'U':'🦈'}</div>
+    <div class="${bubClass}">
+      <div class="bubble-name ${nameClass}">${name}</div>
+      ${content}
+    </div>
+  </div>`;
+}
+
+// ── Main data loader ─────────────────────────────────────────────────────────
+async function loadAll(){
+  const d=await api('/api/status');
+  if(!d){document.getElementById('statusTxt').textContent='Disconnected';return;}
+  data=d;
+
+  // Overview
+  document.getElementById('s-msgs').textContent=d.msgCount||0;
+  document.getElementById('s-facts').textContent=(d.memory?.facts||[]).length;
+  document.getElementById('s-mode').textContent=d.mode||'—';
+  document.getElementById('s-model').textContent=(d.model||'—').split('-').slice(0,3).join('-');
+  document.getElementById('vbadge').textContent='v'+d.version;
+
+  // Recent memory
+  const facts=d.memory?.facts||[];
+  document.getElementById('recent-mem').innerHTML=facts.length
+    ?facts.slice(-5).reverse().map(f=>`<div class="fact-row"><span class="fact-key">${esc(f.key)}</span><span class="fact-val">${esc(f.value)}</span></div>`).join('')
+    :'<div class="empty">No memory yet</div>';
+
+  // Config
+  document.getElementById('cfg-provider').value=d.config?.provider||'anthropic';
+  document.getElementById('cfg-apikey').value=d.config?.apiKey||'';
+  document.getElementById('cfg-autotest').textContent=d.config?.autoTest!==false?'ON':'OFF';
+  document.getElementById('cfg-autoscan').textContent=d.config?.autoScan!==false?'ON':'OFF';
+  document.getElementById('cfg-mode').textContent=d.mode||'code';
+
+  // Model
+  document.getElementById('m-model').textContent=d.model||'—';
+  document.getElementById('m-provider').textContent=d.config?.provider||'—';
+
+  // Memory panel
+  document.getElementById('mem-list').innerHTML=facts.length
+    ?facts.map((f,i)=>`<div class="fact-row"><span class="fact-key">${esc(f.key)}</span><span class="fact-val">${esc(f.value)}</span><button class="fact-del" onclick="delFact(${i})" title="Delete">✕</button></div>`).join('')
+    :'<div class="empty">No memory stored yet</div>';
+  const ss=d.memory?.sessionSummaries||[];
+  document.getElementById('session-sums').innerHTML=ss.length
+    ?ss.slice(-5).reverse().map(s=>`<div class="row"><span class="label">${esc((s.date||'').slice(0,10))}</span><span class="value">${esc(s.summary||'')}</span></div>`).join('')
+    :'<div class="empty">No past sessions</div>';
+
+  // ── Chat bubbles ──────────────────────────────────────────────────────────
+  const msgs = (d.messages||[]).filter(m=>m.role!=='system');
+  const ml   = document.getElementById('msg-list');
+  const atBottom = ml.scrollHeight - ml.scrollTop - ml.clientHeight < 60;
+  document.getElementById('chat-count').textContent = msgs.length + ' message' + (msgs.length===1?'':'s');
+  if(msgs.length){
+    ml.innerHTML = `<div class="chat-wrap">${msgs.map(makeBubble).join('')}</div>`;
+    // Re-run hljs on any code blocks missed by marked highlight
+    ml.querySelectorAll('pre code:not(.hljs)').forEach(b=>hljs.highlightElement(b));
+    if(atBottom) ml.scrollTop=ml.scrollHeight;
+  } else {
+    ml.innerHTML='<div class="empty" style="padding:60px 0">No messages yet — start chatting in the terminal</div>';
+  }
+
+  // System
+  document.getElementById('sys-info').innerHTML=`
+    <div class="row"><span class="label">Node.js</span><span class="value">${esc(d.node||'')}</span></div>
+    <div class="row"><span class="label">Platform</span><span class="value">${esc(d.platform||'')}</span></div>
+    <div class="row"><span class="label">Memory use</span><span class="value">${esc(d.memUsage||'')}</span></div>
+    <div class="row"><span class="label">Uptime</span><span class="value">${esc(d.uptime||'')}</span></div>`;
+  document.getElementById('sys-paths').innerHTML=`
+    <div class="row"><span class="label">Config</span><span class="value">${esc(d.paths?.config||'')}</span></div>
+    <div class="row"><span class="label">Memory</span><span class="value">${esc(d.paths?.memory||'')}</span></div>
+    <div class="row"><span class="label">Skills</span><span class="value">${esc(d.paths?.skills||'')}</span></div>
+    <div class="row"><span class="label">Sessions</span><span class="value">${esc(d.paths?.sessions||'')}</span></div>`;
+}
+
+async function saveConfig(){
+  const prov=document.getElementById('cfg-provider').value;
+  const key=document.getElementById('cfg-apikey').value;
+  const r=await api('/api/config','POST',{provider:prov,apiKey:key});
+  r?.ok?toast('Config saved — restart megaladon to apply'):toast('Failed to save',false);
+}
+async function addFact(){
+  const k=document.getElementById('new-key').value.trim();
+  const v=document.getElementById('new-val').value.trim();
+  if(!k||!v){toast('Key and value required',false);return;}
+  const r=await api('/api/memory','POST',{key:k,value:v});
+  if(r?.ok){document.getElementById('new-key').value='';document.getElementById('new-val').value='';toast('Fact saved');loadAll();}
+  else toast('Failed',false);
+}
+async function delFact(i){
+  const r=await api('/api/memory/'+i,'DELETE');
+  r?.ok?(toast('Fact deleted'),loadAll()):toast('Failed',false);
+}
+async function clearMemory(){
+  if(!confirm('Clear all memory? This cannot be undone.'))return;
+  const r=await api('/api/memory/all','DELETE');
+  r?.ok?(toast('Memory cleared'),loadAll()):toast('Failed',false);
+}
+
+loadAll();
+setInterval(loadAll,5000);
+</script>
+</body>
+</html>
