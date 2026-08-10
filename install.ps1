@@ -158,4 +158,8 @@ $launch = Read-Host "  Launch Megaladon now? [Y/n]"
 if ($launch -eq '' -or $launch -match '^[Yy]') {
     Write-Host ""
     & node "$installDir\bin\meg.js"
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 136e27dc6c0e42462fbd5c6028aa63666dc094a0
