@@ -7,15 +7,15 @@
  *
  * ── IDLE MODE (WA connected but quiet) ───────────────────────────────────────
  * Normal PS1 prompt, WA log lines each start on their own fresh line:
- *   ┌[HH:MM:SS]────[whyWhale]────[◈ agent]────[0]
+ *   ┌[HH:MM:SS]────[Megaladon]────[◈ agent]────[0]
  *   └[New folder]──►
  *   07:53:51 [WA] WhatsApp connected ✅
  *   07:53:53 [WA] Startup message sent to owner.
- *   ┌[HH:MM:SS]────[whyWhale]────[◈ agent]────[0]
+ *   ┌[HH:MM:SS]────[Megaladon]────[◈ agent]────[0]
  *   └[New folder]──►
  *
  * ── SECTION MODE (WA conversation active) ────────────────────────────────────
- *   ┌[HH:MM:SS]════[whyWhale]════════[section :1]
+ *   ┌[HH:MM:SS]════[Megaladon]════════[section :1]
  *   ┟══[whatsapp :[WA ←]:[ 1]::[919645278065  hi]]
  *   ┟══[whatsapp :[WA →]:[ 2]::[919645278065  hello!]]
  *   └[whatsapp]-[process]::[section @OnGoing->chatting]
@@ -53,7 +53,7 @@ const B = colors.bold;
 function ts() {
   const n = new Date();
   return [n.getHours(), n.getMinutes(), n.getSeconds()]
-    .map(v => String(v).padStart(2, '0')).join(':');
+      .map(v => String(v).padStart(2, '0')).join(':');
 }
 
 function cwd() {
@@ -84,7 +84,7 @@ function openSection() {
     C.cyan + '┌',
     C.waGreen + '[' + R + C.amber + ts() + R + C.waGreen + ']' + R,
     C.waGreen + '════' + R,
-    C.waGreen + '[' + R + B + C.white + 'whyWhale' + R + C.waGreen + ']' + R,
+    C.waGreen + '[' + R + B + C.white + 'Megaladon' + R + C.waGreen + ']' + R,
     C.waGreen + '════════' + R,
     C.waGreen + '[' + R + C.waLight + B + 'section :' + _sectionNum + R + C.waGreen + ']' + R,
   ].join('');
@@ -157,7 +157,7 @@ function printIdlePrompt(msgCount = 0, mode = 'code') {
     AB + '┌',
     AB + '[' + R + C.coral + ts() + R + AB + ']' + R,
     AB + '────' + R,
-    AB + '[' + R + B + C.white + 'whyWhale' + R + AB + ']' + R,
+    AB + '[' + R + B + C.white + 'Megaladon' + R + AB + ']' + R,
     AB + '────' + R,
     AB + '[' + R + C.coral + modeLabel + R + AB + ']' + R,
     AB + '────' + R,
@@ -165,7 +165,7 @@ function printIdlePrompt(msgCount = 0, mode = 'code') {
   ].join('');
 
   const l2 = AB + '└[' + R + C.teal + cwd() + R + AB + ']' + R +
-             AB + '──' + R + C.coral + '►' + R + ' ';
+      AB + '──' + R + C.coral + '►' + R + ' ';
 
   process.stdout.write('\n' + l1 + '\n' + l2);
 }
@@ -183,7 +183,7 @@ function openStartupBox(label) {
     C.waGreen + '┌' + R,
     C.waGreen + '[' + R + C.amber + ts() + R + C.waGreen + ']' + R,
     C.waGreen + '════' + R,
-    C.waGreen + '[' + R + B + C.white + 'whyWhale' + R + C.waGreen + ']' + R,
+    C.waGreen + '[' + R + B + C.white + 'Megaladon' + R + C.waGreen + ']' + R,
     C.waGreen + '════════' + R,
     C.waGreen + '[' + R + C.waLight + B + (label || 'WA startup') + R + C.waGreen + ']' + R,
   ].join('');
@@ -192,8 +192,8 @@ function openStartupBox(label) {
 
 function startupLine(level, msg) {
   const color = level === 'success' ? C.waGreen
-              : level === 'warn'    ? C.amber
-              : level === 'error'   ? C.red
+      : level === 'warn'    ? C.amber
+          : level === 'error'   ? C.red
               : C.waLight;
   const line = [
     C.waGreen + '┟══ ' + R,

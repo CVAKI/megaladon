@@ -1,7 +1,7 @@
 {
-  "name": "whywhale-whatsapp",
+  "name": "megaladon-whatsapp",
   "version": "1.0.0",
-  "description": "WhatsApp channel connection for whyWhale — powered by CVAKI",
+  "description": "WhatsApp channel connection for Megaladon — powered by CVAKI",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"

@@ -12,7 +12,7 @@ process.on('unhandledRejection', (reason) => {
 const { dmGuard } = require('./dmPolicy');
 
 /**
- * whyWhale — WhatsApp Connection (Baileys)
+ * Megaladon — WhatsApp Connection (Baileys)
  *
  * FIXES & CHANGES in this version:
  *
@@ -51,9 +51,9 @@ const { getAIResponse, executeWork } = require('./aiHandler');
 const { log, colors }                = require('./logger');
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const AUTH_DIR         = path.join(os.homedir(), '.whyWhale', 'credentials', 'whatsapp');
+const AUTH_DIR         = path.join(os.homedir(), '.meg', 'credentials', 'whatsapp');
 const SESSION_ID       = 'session';
-const CONNECTIONS_PATH = path.join(os.homedir(), '.whyWhale', 'connections.json');
+const CONNECTIONS_PATH = path.join(os.homedir(), '.meg', 'connections.json');
 const MAX_RETRIES      = 3;
 const RETRY_440_MS     = 15_000;
 
@@ -123,8 +123,8 @@ function toJid(number) {
 }
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
-const MSG_ONLINE  = '🐋 *whyWhale is swimming* 🌊\n\nI\'m online and ready!\nSend me any message or terminal command and I\'ll get it done.';
-const MSG_OFFLINE = '🎣 *whyWhale is going to catch fish...* 🐟\n\nI\'m shutting down now. I\'ll message you again when I\'m back online!';
+const MSG_ONLINE  = '🦈 *Megaladon is swimming* 🌊\n\nI\'m online and ready!\nSend me any message or terminal command and I\'ll get it done.';
+const MSG_OFFLINE = '🎣 *Megaladon is going to catch fish...* 🐟\n\nI\'m shutting down now. I\'ll message you again when I\'m back online!';
 
 // ─── Module-level state ───────────────────────────────────────────────────────
 let _activeSock   = null;
@@ -227,7 +227,7 @@ async function startWhatsApp(opts = {}) {
     version,
     auth:    state,
     logger:  pino({ level: 'silent' }),
-    browser: ['whyWhale', 'Chrome', '4.0.0'],
+    browser: ['Megaladon', 'Chrome', '4.0.0'],
   });
 
   _activeSock  = sock;
@@ -240,9 +240,9 @@ async function startWhatsApp(opts = {}) {
   process.stderr.write = (chunk, ...args) => {
     const s = typeof chunk === 'string' ? chunk : chunk.toString();
     if (
-      s.includes('Bad MAC') || s.includes('Failed to decrypt') ||
-      s.includes('Closing open session') || s.includes('Closing session:') ||
-      s.includes('SessionEntry')
+        s.includes('Bad MAC') || s.includes('Failed to decrypt') ||
+        s.includes('Closing open session') || s.includes('Closing session:') ||
+        s.includes('SessionEntry')
     ) return true;
     return _origStderrWrite(chunk, ...args);
   };
@@ -287,7 +287,7 @@ async function startWhatsApp(opts = {}) {
 
     if (connection === 'close') {
       const code      = (lastDisconnect?.error instanceof Boom)
-        ? lastDisconnect.error.output.statusCode : null;
+          ? lastDisconnect.error.output.statusCode : null;
       const loggedOut = code === DisconnectReason.loggedOut;
 
       _activeSock  = null;
@@ -463,11 +463,11 @@ async function startWhatsApp(opts = {}) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function extractText(msg) {
   return (
-    msg.message?.conversation ||
-    msg.message?.extendedTextMessage?.text ||
-    msg.message?.buttonsResponseMessage?.selectedDisplayText ||
-    msg.message?.listResponseMessage?.title ||
-    ''
+      msg.message?.conversation ||
+      msg.message?.extendedTextMessage?.text ||
+      msg.message?.buttonsResponseMessage?.selectedDisplayText ||
+      msg.message?.listResponseMessage?.title ||
+      ''
   );
 }
 
@@ -476,7 +476,7 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // ─── Standalone entry ─────────────────────────────────────────────────────────
 if (require.main === module) {
   startWhatsApp({ headless: !process.stdout.isTTY })
-    .catch(err => { console.error(err); process.exit(1); });
+      .catch(err => { console.error(err); process.exit(1); });
 }
 
 // ─── sendToOwner ──────────────────────────────────────────────────────────────

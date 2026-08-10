@@ -3,7 +3,7 @@
 /**
  * connections/whatsapp/aiHandler.js
  *
- * Bridges WhatsApp messages → whyWhale AI pipeline (or direct provider).
+ * Bridges WhatsApp messages → Megaladon AI pipeline (or direct provider).
  *
  * TWO-PHASE DESIGN for work tasks:
  *
@@ -23,10 +23,10 @@
  *   ┟══ [WA ←] user message
  *   ┟══ [WA →] "ok wait for me, I'll be back after processing"
  *   └[whatsapp]-[process]::[section @END-> going to terminal for work]
- *   ┌[time]────[whyWhale]────[mode]────[#]
+ *   ┌[time]────[Megaladon]────[mode]────[#]
  *   └[cwd]──►  creating index.php...        ← live terminal output
  *              writing style.css...
- *   ┌[time]════[whyWhale]════════[section :2]
+ *   ┌[time]════[Megaladon]════════[section :2]
  *   ┟══ [WA →] "Done! Here's what I built..."
  */
 
@@ -42,10 +42,10 @@ function setContext(ctx) { _ctx = ctx; }
 
 function stripCodeFences(code) {
   return code
-    .replace(/^```[\w.-]*[\t ]*\r?\n/, '')
-    .replace(/\r?\n```[\w.-]*[\t ]*$/, '')
-    .replace(/^```[\w.-]*[\t ]*\r?\n/, '')
-    .replace(/\r?\n```[\w.-]*[\t ]*$/, '');
+      .replace(/^```[\w.-]*[\t ]*\r?\n/, '')
+      .replace(/\r?\n```[\w.-]*[\t ]*$/, '')
+      .replace(/^```[\w.-]*[\t ]*\r?\n/, '')
+      .replace(/\r?\n```[\w.-]*[\t ]*$/, '');
 }
 // ─── Per-sender rolling history ───────────────────────────────────────────────
 const histories   = new Map();
@@ -103,16 +103,16 @@ function parseDirectives(text) {
 
 function hasWork(directives) {
   return directives.files.length > 0 ||
-         directives.runs.length  > 0 ||
-         directives.memory.length > 0 ||
-         directives.sends.length > 0;
+      directives.runs.length  > 0 ||
+      directives.memory.length > 0 ||
+      directives.sends.length > 0;
 }
 
 function detectWorkType(directives, rawReply) {
   const hasSend = directives.sends.length > 0 ||
-    /@@SEND:/i.test(rawReply) ||
-    /\bsend\b.*\b(file|zip|attachment)\b/i.test(rawReply) ||
-    /\b(zip|compress|archive)\b/i.test(rawReply);
+      /@@SEND:/i.test(rawReply) ||
+      /\bsend\b.*\b(file|zip|attachment)\b/i.test(rawReply) ||
+      /\b(zip|compress|archive)\b/i.test(rawReply);
   if (hasSend)                              return 'send';
   if (hasWork(directives))                  return 'work';
   return 'chat';
@@ -141,9 +141,9 @@ function detectSendFileRequest(text) {
     try {
       const cwd = process.cwd();
       const files = fs.readdirSync(cwd)
-        .map(f => { const abs = path.join(cwd, f); try { return { abs, mtime: fs.statSync(abs).mtimeMs, isFile: fs.statSync(abs).isFile() }; } catch(_) { return null; } })
-        .filter(e => e && e.isFile)
-        .sort((a, b) => b.mtime - a.mtime);
+          .map(f => { const abs = path.join(cwd, f); try { return { abs, mtime: fs.statSync(abs).mtimeMs, isFile: fs.statSync(abs).isFile() }; } catch(_) { return null; } })
+          .filter(e => e && e.isFile)
+          .sort((a, b) => b.mtime - a.mtime);
       if (files.length) return [files[0].abs];
     } catch (_) {}
   }
@@ -266,7 +266,7 @@ async function handleWACommand(text, sender) {
       const extra    = allLines.length > 60 ? '\n… (' + (allLines.length - 60) + ' more lines)' : '';
       const prefix   = (actualCmd !== shellCmd) ? '(→ ' + actualCmd + ')\n' : '';
       return '```\n$ ' + shellCmd + '\n' + prefix + shown.join('\n') + extra + '\n```' +
-             '\n📂 `' + cwd + '`';
+          '\n📂 `' + cwd + '`';
     } catch (e) {
       const errOut = (e.stdout || e.stderr || e.message || '').trim();
 
@@ -286,7 +286,7 @@ async function handleWACommand(text, sender) {
     }
   }
 
-  // ── /exit — shut down whyWhale from WA DM ─────────────────────────────────
+  // ── /exit — shut down Megaladon from WA DM ─────────────────────────────────
   if (cmd === '/exit') {
     // Reply first, then schedule shutdown after 1.5s so the reply can be sent
     setTimeout(async () => {
@@ -296,13 +296,13 @@ async function handleWACommand(text, sender) {
       if (_ctx && _ctx.rl) _ctx.rl.close();
       else process.exit(0);
     }, 1500);
-    return '🐋 *whyWhale shutting down...*\n\nGoodbye! I\'ll send a farewell message now.';
+    return '🦈 *Megaladon shutting down...*\n\nGoodbye! I\'ll send a farewell message now.';
   }
 
   // ── /help ──────────────────────────────────────────────────────────────────
   if (cmd === '/help') {
     return [
-      '🐋 *whyWhale commands (WhatsApp)*',
+      '🦈 *Megaladon commands (WhatsApp)*',
       '',
       '*Memory*',
       '`/memory` — show all facts',
@@ -331,7 +331,7 @@ async function handleWACommand(text, sender) {
       '*Session*',
       '`/stats` — session statistics',
       '`/clear` — clear conversation history',
-      '`/exit` — shut down whyWhale',
+      '`/exit` — shut down Megaladon',
       '',
       '💡 *Messages are queued* — send freely even while a task is running!',
     ].join('\n');
@@ -420,8 +420,8 @@ async function handleWACommand(text, sender) {
     const treeLines = buildTree(cwd2, '', 0);
     const treeOut   = treeLines.slice(0, 60).join('\n') + (treeLines.length > 60 ? '\n… (truncated)' : '');
     const extra     = files.length > 0
-      ? '\n\n✔ *' + files.length + ' file(s) loaded into AI context*'
-      : '';
+        ? '\n\n✔ *' + files.length + ' file(s) loaded into AI context*'
+        : '';
 
     return '📂 *' + cwd2 + '*\n\n```\n' + (treeOut || '(empty)') + '\n```' + extra;
   }
@@ -498,7 +498,7 @@ async function handleWACommand(text, sender) {
 
     if (!sub || sub === '-show') {
       const rows = PRESETS.map(p =>
-        (p.tokens === current ? '▶ ' : '  ') + p.tokens + ' — ' + p.label + ': ' + p.desc
+          (p.tokens === current ? '▶ ' : '  ') + p.tokens + ' — ' + p.label + ': ' + p.desc
       ).join('\n');
       return '⚙️ *Token limit* (current: ' + current.toLocaleString() + ')\n\n```\n' + rows + '\n```\n\nSet: `/token -set-usage 8192`';
     }
@@ -524,7 +524,7 @@ async function handleWACommand(text, sender) {
     const ctx = _ctx;
     const up  = ctx ? Math.round((Date.now() - ctx.t0) / 1000) : 0;
     const lines = [
-      '📊 *whyWhale Session Stats*',
+      '📊 *Megaladon Session Stats*',
       '',
       '• Provider: ' + (cfg.provider || 'unknown'),
       '• Model: '    + (cfg.model    || 'unknown'),
@@ -591,11 +591,11 @@ async function getAIResponse(userMessage, sender = 'unknown') {
 
   // Clean reply for WA (strip directive blocks)
   let reply = rawReply
-    .replace(/@@FILE:[^\n]+\n[\s\S]*?@@END/g, '')
-    .replace(/@@RUN:[^\n]+/g, '')
-    .replace(/@@MEMORY:[^\n]+/g, '')
-    .replace(/@@SEND:[^\n]+/g, '')
-    .trim();
+      .replace(/@@FILE:[^\n]+\n[\s\S]*?@@END/g, '')
+      .replace(/@@RUN:[^\n]+/g, '')
+      .replace(/@@MEMORY:[^\n]+/g, '')
+      .replace(/@@SEND:[^\n]+/g, '')
+      .trim();
 
   // Annotate reply with what's about to happen
   if (workType === 'work') {
@@ -603,7 +603,7 @@ async function getAIResponse(userMessage, sender = 'unknown') {
     if (directives.files.length) parts.push(`📄 ${directives.files.length} file(s)`);
     if (directives.runs.length)  parts.push(`⚡ ${directives.runs.length} command(s)`);
     reply = (reply ? reply + '\n\n' : '') +
-      `⏳ Working on it — ${parts.join(', ')}. I'll report back when done.`;
+        `⏳ Working on it — ${parts.join(', ')}. I'll report back when done.`;
   } else if (workType === 'send') {
     reply = (reply ? reply + '\n\n' : '') + '📦 Preparing files, just a moment...';
   }
@@ -628,7 +628,7 @@ async function executeWork(directives, sender) {
     C.waGreen+'┌'+R,
     C.waGreen+'['+R+C.amber+ts()+R+C.waGreen+']'+R,
     C.waGreen+'════'+R,
-    C.waGreen+'['+R+B+C.white+'whyWhale'+R+C.waGreen+']'+R,
+    C.waGreen+'['+R+B+C.white+'Megaladon'+R+C.waGreen+']'+R,
     C.waGreen+'════════'+R,
     C.waGreen+'['+R+C.waLight+B+'⚙ executing work'+R+C.waGreen+']'+R,
   ].join('') + '\n');
@@ -678,7 +678,7 @@ async function executeWork(directives, sender) {
       const out = execSync(cmd, { encoding: 'utf8', timeout: 30_000, cwd: process.cwd(), stdio: ['pipe','pipe','pipe'] });
       if (out.trim()) {
         out.trim().split('\n').slice(0,8).forEach(l =>
-          process.stdout.write(C.waGreen+'┟    '+R+C.grey+'│  '+R+C.waLight+l+R+'\n')
+            process.stdout.write(C.waGreen+'┟    '+R+C.grey+'│  '+R+C.waLight+l+R+'\n')
         );
       }
       summary.push('⚡ ran `' + cmd + '`');
@@ -762,7 +762,7 @@ async function integratedCall(userMessage, sender) {
   };
 
   // Show a minimal WA indicator in the terminal so the user knows it's processing.
-  // Without this, the suppressed stdout makes whyWhale appear completely frozen.
+  // Without this, the suppressed stdout makes Megaladon appear completely frozen.
   const { colors: C } = require('./logger');
   const waIndicator = setInterval(() => {
     const frames = ['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'];
@@ -784,7 +784,7 @@ async function integratedCall(userMessage, sender) {
     await Promise.race([
       handleAiMessage(userMessage, ctxClone),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('WA AI timeout after 45s')), TIMEOUT_MS)
+          setTimeout(() => reject(new Error('WA AI timeout after 45s')), TIMEOUT_MS)
       ),
     ]);
     raw = ctxClone.lastReply || '';
@@ -816,15 +816,15 @@ async function integratedCall(userMessage, sender) {
 function amplifyWARequest(text) {
   const lower = text.toLowerCase();
   const isBuild = /\b(create|build|make|generate|write|design)\b/.test(lower) &&
-                  /\b(html|css|page|website|site|app|component|ui|landing|portfolio|dashboard|template)\b/.test(lower);
+      /\b(html|css|page|website|site|app|component|ui|landing|portfolio|dashboard|template)\b/.test(lower);
   const isEdit  = /\b(improve|update|better|nicer|modern|beautiful|apple|redesign|color|colour|style|enhance)\b/.test(lower) &&
-                  /\b(html|css|page|website|design|look|ui|the code|the file)\b/.test(lower);
+      /\b(html|css|page|website|design|look|ui|the code|the file)\b/.test(lower);
   if (!isBuild && !isEdit) return text;
 
   const appleStyle = /apple|minimal|clean|cupertino/.test(lower);
   const palette = appleStyle
-    ? 'Apple-style palette: white/off-white backgrounds, system fonts, black text, subtle blue accents (#0071e3), generous whitespace.'
-    : 'Modern gradient palette: dark hero (deep navy to indigo), vivid accent, frosted glass cards, white text.';
+      ? 'Apple-style palette: white/off-white backgrounds, system fonts, black text, subtle blue accents (#0071e3), generous whitespace.'
+      : 'Modern gradient palette: dark hero (deep navy to indigo), vivid accent, frosted glass cards, white text.';
 
   return `${text}
 
@@ -852,7 +852,7 @@ async function standaloneCall(userMessage, sender) {
   const maxTokens = cfg.maxTokens || 8192;
 
   if (!apiKey && provider !== 'ollama') {
-    return '⚠️ No API key configured. Run `whywhale --setup` or set WA_API_KEY.';
+    return '⚠️ No API key configured. Run `megaladon --setup` or set WA_API_KEY.';
   }
 
   // Amplify brief build/create requests for richer output
@@ -925,13 +925,13 @@ async function callOllama({ model, systemPrompt, messages, maxTokens = 8192 }) {
 // ─── System prompt ────────────────────────────────────────────────────────────
 function buildSystemPrompt(mem) {
   const memLines = Object.entries(mem?.facts || {})
-    .map(([k, v]) => `- ${k}: ${v}`).join('\n');
+      .map(([k, v]) => `- ${k}: ${v}`).join('\n');
   return [
-    'You are whyWhale 🐋 — an elite AI coding assistant and terminal brain, now connected via WhatsApp.',
+    'You are Megaladon 🦈 — an elite AI coding assistant and terminal brain, now connected via WhatsApp.',
     'You were built by CVAKI. You are NOT Claude, GPT, Gemini, or any generic AI.',
-    'If anyone asks who you are, what you are, or who made you: always say you are whyWhale, built by CVAKI.',
+    'If anyone asks who you are, what you are, or who made you: always say you are Megaladon, built by CVAKI.',
     'Never say you are "an AI language model created by Anthropic" or mention any underlying model provider.',
-    'Your personality: sharp, direct, whale-themed. You use 🐋 occasionally. You are proud to be whyWhale.',
+    'Your personality: sharp, direct, shark-themed. You use 🦈 occasionally. You are proud to be Megaladon.',
     '',
     'You are replying over WhatsApp — keep messages readable on mobile:',
     '  • Be concise but complete. No padding or filler.',

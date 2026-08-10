@@ -1,6 +1,6 @@
-# 🐋 whyWhale — WhatsApp Connection
+# 🦈 Megaladon — WhatsApp Connection
 
-Connects whyWhale to WhatsApp via the **Baileys** library  
+Connects Megaladon to WhatsApp via the **Baileys** library  
 (reverse-engineered WA Web multi-device protocol — no Business API needed).
 
 ---
@@ -11,7 +11,7 @@ Connects whyWhale to WhatsApp via the **Baileys** library
 connections/
 └── whatsapp/
     ├── index.js        ← entry point & WA socket lifecycle
-    ├── aiHandler.js    ← bridges WA messages → whyWhale AI pipeline
+    ├── aiHandler.js    ← bridges WA messages → Megaladon AI pipeline
     ├── dmPolicy.js     ← who can message the bot (open / allowlist / pairing)
     ├── logger.js       ← styled terminal output
     ├── package.json    ← Baileys + pino deps
@@ -38,7 +38,7 @@ node index.js
 A QR code will appear in your terminal.  
 Open WhatsApp → **Settings → Linked Devices → Link a Device** and scan it.
 
-Credentials are saved to `~/.whywhale/credentials/whatsapp/session/` — you only scan once.
+Credentials are saved to `~/.meg/credentials/whatsapp/session/` — you only scan once.
 
 ### 3. Headless server (no display)
 
@@ -53,9 +53,9 @@ so it works on headless servers out of the box.
 |-----------------|--------------------------------|--------------------------------------|
 | `WA_DM_POLICY`  | `open`                         | `open` / `allowlist` / `pairing`     |
 | `WA_ALLOW_FROM` | `*`                            | Comma-separated allowed phone numbers|
-| `WA_PROVIDER`   | value from `~/.whywhale.json`  | `anthropic` / `openrouter` / `groq` / `ollama` |
-| `WA_MODEL`      | value from `~/.whywhale.json`  | Model ID string                      |
-| `WA_API_KEY`    | value from `~/.whywhale.json`  | Your provider API key                |
+| `WA_PROVIDER`   | value from `~/.meg/config.json`  | `anthropic` / `openrouter` / `groq` / `ollama` |
+| `WA_MODEL`      | value from `~/.meg/config.json`  | Model ID string                      |
+| `WA_API_KEY`    | value from `~/.meg/config.json`  | Your provider API key                |
 | `OLLAMA_HOST`   | `http://localhost:11434`       | Ollama base URL (if using Ollama)    |
 
 ---
@@ -76,22 +76,22 @@ Approved senders are remembered for the lifetime of the process.
 
 ---
 
-## Integrate with the full whyWhale pipeline
+## Integrate with the full Megaladon pipeline
 
-If you're running whyWhale normally, pass the `ctx` object to `aiHandler`  
+If you're running Megaladon normally, pass the `ctx` object to `aiHandler`  
 so WhatsApp messages go through the same 7-phase pipeline (memory, skills, self-test, etc.):
 
 ```js
 const { startWhatsApp }    = require('./connections/whatsapp');
 const { setContext }       = require('./connections/whatsapp/aiHandler');
 
-// After whyWhale ctx is initialised:
+// After Megaladon ctx is initialised:
 setContext(ctx);
 startWhatsApp({ dmPolicy: 'pairing' });
 ```
 
 Without `setContext()`, the module falls back to a direct API call using  
-the config from `~/.whywhale.json`.
+the config from `~/.meg/config.json`.
 
 ---
 
@@ -116,7 +116,7 @@ WhatsApp message arrives
         ↓
   dmPolicy.js  (open / allowlist / pairing gate)
         ↓
-  aiHandler.js  (whyWhale 7-phase pipeline OR direct provider call)
+  aiHandler.js  (Megaladon 7-phase pipeline OR direct provider call)
         ↓
   Provider API  (Claude / Groq / OpenRouter / Ollama)
         ↓
