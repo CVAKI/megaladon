@@ -1,4 +1,4 @@
-# 🐋 whyWhale Plugin System — How It Works
+# 🦈 Megaladon Plugin System — How It Works
 
 > Version 1.0 · CVAKI
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-The whyWhale plugin system lets you extend the assistant with custom slash commands
+The Megaladon plugin system lets you extend the assistant with custom slash commands
 packaged as `.zip` files. Drop a zip into `skills/plugs/`, run one command, and your
 plugin becomes a first-class citizen — the AI model learns what it does, its commands
 appear in `/skill list`, and it persists across sessions.
@@ -16,7 +16,7 @@ appear in `/skill list`, and it persists across sessions.
 ## Folder Layout
 
 ```
-whyWhale/
+megaladon/
 ├── plugins/               ← plugin engine (do not edit)
 │   ├── index.js
 │   ├── installer.js
@@ -85,7 +85,7 @@ myplugin.zip
 | `name`        | ✔        | Human-readable name |
 | `version`     | ✔        | SemVer string |
 | `description` | ✔        | Used in AI context and socket.txt |
-| `id`          | —        | Leave `null` — whyWhale assigns it on install |
+| `id`          | —        | Leave `null` — Megaladon assigns it on install |
 | `author`      | —        | Your name |
 | `lang`        | —        | `["js"]`, `["py"]`, `["cpp"]`, `["ts"]`, etc. |
 | `commands`    | ✔        | Array of command objects |
@@ -94,7 +94,7 @@ myplugin.zip
 
 ## gate.js — The Bridge
 
-`gate.js` is the **only** file whyWhale calls directly. It must export a single
+`gate.js` is the **only** file Megaladon calls directly. It must export a single
 async `handle()` function:
 
 ```js
@@ -105,7 +105,7 @@ module.exports = {
   async handle({ command, args, ctx, pluginDir }) {
     // command   — the slash command string, e.g. "/myplugin"
     // args      — array of space-split arguments after the command
-    // ctx       — whyWhale context object (ctx.messages, ctx.providerKey, etc.)
+    // ctx       — Megaladon context object (ctx.messages, ctx.providerKey, etc.)
     // pluginDir — absolute path to the extracted plugin folder
 
     const core = require(path.join(pluginDir, 'myplugin', 'main.js'));
@@ -136,7 +136,7 @@ module.exports = {
 ```
 1. Place  myplugin.zip  inside  skills/plugs/
 
-2. In whyWhale:
+2. In Megaladon:
    /skill install myplugin
 
 3. Done — commands are live immediately.
@@ -166,7 +166,7 @@ After installation, the plugin's entry is appended to `skills/socket.txt`:
 };//myplugin pack
 ```
 
-This file is used by whyWhale to build the AI's awareness of what plugins are
+This file is used by Megaladon to build the AI's awareness of what plugins are
 available and when to suggest them.
 
 ---
@@ -276,9 +276,9 @@ npm install pdf-parse
 - [ ] Every command in `commands` has `trigger` and `brief`
 - [ ] `gate.js` exports `{ handle({ command, args, ctx, pluginDir }) }`
 - [ ] `gate.js` does NOT crash if core deps are missing — return `{ error }` instead
-- [ ] `id` field in `plug-connect.json` is `null` (whyWhale assigns it)
-- [ ] Tested with `/skill install` in whyWhale before distributing
+- [ ] `id` field in `plug-connect.json` is `null` (Megaladon assigns it)
+- [ ] Tested with `/skill install` in Megaladon before distributing
 
 ---
 
-*Plugin system designed and built by CVAKI for whyWhale v4.0+*
+*Plugin system designed and built by CVAKI for Megaladon v4.0+*

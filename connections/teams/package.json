@@ -1,0 +1,17 @@
+{
+  "name": "megaladon-teams",
+  "version": "1.0.0",
+  "description": "Microsoft Teams channel connection for Megaladon — powered by CVAKI",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "botbuilder": "^4.23.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "CVAKI",
+  "license": "MIT"
+}
