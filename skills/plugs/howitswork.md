@@ -281,4 +281,8 @@ npm install pdf-parse
 
 ---
 
+<<<<<<< HEAD
 *Plugin system designed and built by CVAKI for Megaladon v4.0+*
+=======
+*Plugin system designed and built by CVAKI for Megaladon v4.0+*
+>>>>>>> 136e27dc6c0e42462fbd5c6028aa63666dc094a0
