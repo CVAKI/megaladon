@@ -26,6 +26,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "imap-simple": "^5.1.0"
+    "imap-simple": "^5.1.0",
+    "nodemailer": "^9.0.5"
   }
 }
