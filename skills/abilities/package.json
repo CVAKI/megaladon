@@ -1,0 +1,15 @@
+{
+  "name": "megaladon-abilities",
+  "version": "1.0.0",
+  "description": "Real desktop control for Megaladon \u2014 screen vision (Ollama) + mouse + keyboard, driven by @@ABILITY: directives.",
+  "main": "index.js",
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.2.0",
+    "screenshot-desktop": "^1.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "CVAKI",
+  "license": "MIT"
+}
