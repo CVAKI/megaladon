@@ -18,6 +18,35 @@ const ollamaSetup = require('../ollamaSetup');
 const OLLAMA_HOST  = process.env.OLLAMA_HOST || 'http://localhost:11434';
 const VISION_MODEL = process.env.MEG_VISION_MODEL || 'llava';
 
+// ─── Cache of the most recent screenshot's real dimensions + the ELEMENT ────
+// coordinate list the vision model reported. Two consumers:
+//   1) mousecontrol uses the dimensions to scale AI-given (x,y) — which are
+//      always in SCREENSHOT pixel space — into nut-js's actual mouse
+//      coordinate space, which differs whenever OS display scaling isn't
+//      100% (125%/150% is extremely common on Windows). Without this, a
+//      click at "(500,300) in the screenshot" can land somewhere else
+//      entirely on the real screen — this was the root cause of clicks and
+//      typed text silently missing their target.
+//   2) index.js uses the ELEMENT list to flag when a click/moveTo wasn't
+//      close to anything the vision model actually reported, since smaller
+//      local models frequently ignore the "use real coordinates" instruction
+//      and just guess a spot like screen-center instead.
+let _lastShot = { width: null, height: null, elements: [] };
+
+function getLastScreenshotInfo() {
+  return _lastShot;
+}
+
+function parseElements(description) {
+  const out = [];
+  const re = /ELEMENT:\s*(.+?)\s+AT\s*\((\d+)\s*,\s*(\d+)\)/gi;
+  let m;
+  while ((m = re.exec(description)) !== null) {
+    out.push({ name: m[1].trim(), x: Number(m[2]), y: Number(m[3]) });
+  }
+  return out;
+}
+
 async function captureScreen() {
   // Returns a PNG Buffer of the primary display.
   const buf = await screenshot({ format: 'png' });
@@ -51,7 +80,8 @@ function callOllamaVision(prompt, base64Image, model) {
     const req = lib.request(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-      timeout: 60000,
+      timeout: 120000, // was 60000 — logs showed timeouts right after launching a browser, when
+      // CPU-only vision inference is competing with a heavy app for resources
     }, res => {
       let raw = '';
       res.on('data', d => { raw += d; });
@@ -65,7 +95,7 @@ function callOllamaVision(prompt, base64Image, model) {
         }
       });
     });
-    req.on('timeout', () => { req.destroy(); reject(new Error('Ollama vision request timed out after 60s')); });
+    req.on('timeout', () => { req.destroy(); reject(new Error('Ollama vision request timed out after 120s')); });
     req.on('error', err => reject(new Error('Could not reach Ollama at ' + OLLAMA_HOST + ' — is `ollama serve` running? (' + err.message + ')')));
     req.write(body);
     req.end();
@@ -78,8 +108,27 @@ function callOllamaVision(prompt, base64Image, model) {
 // has nothing but prose to work with and every click is a blind guess.
 function coordinateInstruction(width, height) {
   if (!width || !height) return '';
+  // Precise anchors, computed directly from the real resolution rather than
+  // estimated by the vision model — exact by construction, zero guesswork.
+  // Useful for edge/corner-relative targets like the taskbar, system tray,
+  // or a desktop icon near a corner. NOT for window titlebar buttons (close/
+  // minimize/maximize) — a window's own corner is not the same as the
+  // screen's corner unless it's maximized; use the window.* abilities for
+  // those instead of coordinates.
+  const anchors = [
+    'top-left (0,0)',
+    'top-right (' + (width - 1) + ',0)',
+    'bottom-left (0,' + (height - 1) + ')',
+    'bottom-right (' + (width - 1) + ',' + (height - 1) + ')',
+    'center (' + Math.round(width / 2) + ',' + Math.round(height / 2) + ')',
+  ].join(', ');
   return '\n\nThe screenshot is exactly ' + width + 'x' + height + ' pixels, origin (0,0) at the ' +
-      'top-left corner. After your description, list every clickable element that is relevant ' +
+      'top-left corner. Exact screen anchors (use these directly for corner/edge-relative tasks ' +
+      'like the taskbar or system tray — do not re-estimate these): ' + anchors + '. ' +
+      'Note: a WINDOW\'s own corner is NOT the same as the screen corner unless that window is ' +
+      'maximized — for closing/minimizing/maximizing a window, use the window.close / ' +
+      'window.minimize / window.maximize abilities instead of clicking a titlebar button.\n\n' +
+      'After your description, list every clickable element that is relevant ' +
       '(buttons, links, search bars, icons, menu items, image thumbnails) as one line each in ' +
       'EXACTLY this format:\nELEMENT: <short name> AT (x,y)\n' +
       'Give your best-estimate pixel coordinates for the CENTER of each element based on its ' +
@@ -103,7 +152,13 @@ async function describeScreen(prompt) {
       'visible text, buttons, and anything notable. Be specific and concise.';
   const askPrompt = basePrompt + coordinateInstruction(width, height);
   const description = await callOllamaVision(askPrompt, b64);
-  return description.trim();
+  const trimmed = description.trim();
+
+  // Cache for mousecontrol (coordinate scaling) and the ability dispatcher
+  // (nearest-element sanity check on the next click/moveTo).
+  _lastShot = { width, height, elements: parseElements(trimmed) };
+
+  return trimmed;
 }
 
 /**
@@ -159,4 +214,4 @@ function startWatch(instruction, opts, onEvent) {
   };
 }
 
-module.exports = { captureScreen, describeScreen, callOllamaVision, startWatch };
+module.exports = { captureScreen, describeScreen, callOllamaVision, startWatch, getLastScreenshotInfo };
